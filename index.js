@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = "hack-academia-client.vercel.app";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
