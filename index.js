@@ -13,8 +13,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = "hack-academia-client.vercel.app";
-
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -189,6 +187,6 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`Server is running...`);
 });
