@@ -13,8 +13,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage: storage });
+
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // Increase limit to 20MB
+});
 
 const atlas =
   "mongodb+srv://brahmgaur17:26download12345@cluster0.bl32bqx.mongodb.net/Test";
@@ -32,6 +38,46 @@ async function connectToMongoDB() {
 
 connectToMongoDB();
 
+// app.post("/upload", upload.single("file"), async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ error: "No file uploaded" });
+//     }
+
+//     const db = client.db("Test");
+//     const bucket = new GridFSBucket(db);
+
+//     const uploadedFile = req.file;
+
+//     const { title, course, semester, unit } = req.body;
+
+//     const uploadStream = bucket.openUploadStream(uploadedFile.originalname, {
+//       metadata: {
+//         contentType: uploadedFile.mimetype,
+//         title,
+//         course,
+//         semester,
+//         unit,
+//       },
+//     });
+
+//     // Write the file buffer to GridFS
+//     uploadStream.end(uploadedFile.buffer);
+
+//     uploadStream.on("error", (error) => {
+//       console.error("Error uploading file:", error);
+//       res.status(500).json({ error: "Internal Server Error" });
+//     });
+
+//     uploadStream.on("finish", async () => {
+//       res.status(200).json({ message: "File uploaded successfully" });
+//     });
+//   } catch (error) {
+//     console.error("Error handling file upload:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -40,14 +86,12 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     const db = client.db("Test");
     const bucket = new GridFSBucket(db);
-
-    const uploadedFile = req.file;
-
     const { title, course, semester, unit } = req.body;
 
-    const uploadStream = bucket.openUploadStream(uploadedFile.originalname, {
+    // Open upload stream and write file buffer
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
       metadata: {
-        contentType: uploadedFile.mimetype,
+        contentType: req.file.mimetype,
         title,
         course,
         semester,
@@ -55,16 +99,16 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       },
     });
 
-    // Write the file buffer to GridFS
-    uploadStream.end(uploadedFile.buffer);
+    // Pipe file buffer into GridFS stream
+    uploadStream.end(req.file.buffer);
+
+    uploadStream.on("finish", () => {
+      res.status(200).json({ message: "File uploaded successfully" });
+    });
 
     uploadStream.on("error", (error) => {
       console.error("Error uploading file:", error);
       res.status(500).json({ error: "Internal Server Error" });
-    });
-
-    uploadStream.on("finish", async () => {
-      res.status(200).json({ message: "File uploaded successfully" });
     });
   } catch (error) {
     console.error("Error handling file upload:", error);
